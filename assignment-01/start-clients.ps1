@@ -2,7 +2,8 @@ param(
     [int]$Count = 10,
     [string]$ServerHost = "127.0.0.1",
     [int]$Port = 5000,
-    [string]$Request
+    [string]$Request,
+    [switch]$AutoQuit
 )
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -20,6 +21,8 @@ try {
     for ($i = 1; $i -le $Count; $i++) {
         $command = if ([string]::IsNullOrWhiteSpace($Request)) {
             "Set-Location '$scriptDir'; Write-Host 'Client #$i'; java Client $ServerHost $Port"
+        } elseif ($AutoQuit) {
+            "Set-Location '$scriptDir'; Write-Host 'Client #$i'; java Client $ServerHost $Port '$Request' --quit"
         } else {
             "Set-Location '$scriptDir'; Write-Host 'Client #$i'; java Client $ServerHost $Port '$Request'"
         }

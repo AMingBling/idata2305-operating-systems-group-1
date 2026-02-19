@@ -12,6 +12,7 @@ import java.time.format.DateTimeFormatter;
 public class Server {
     private static final int PORT = 5000;
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+    private static int nextClientId = 1;
 
     /**
      * Accepts one client and handles requests until the client quits.
@@ -24,27 +25,28 @@ public class Server {
         // Accept one client at a time, and keep the server alive for the next client.
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             while (true) {
+                int clientId = nextClientId++;
                 try (Socket socket = serverSocket.accept();
                         DataInputStream dis = new DataInputStream(socket.getInputStream());
                         DataOutputStream dos = new DataOutputStream(socket.getOutputStream())) {
 
-                    System.out.println("[" + timestamp() + "] Client connected: " + socket.getInetAddress());
+                    System.out.println("[" + timestamp() + "] Client #" + clientId + " connected: " + socket.getInetAddress());
                     while (true) {
                         String input = dis.readUTF();
                         if (input == null) {
                             break;
                         }
                         if (input.equalsIgnoreCase("Quit")) {
-                            System.out.println("[" + timestamp() + "] Client requested disconnect: " + socket.getInetAddress());
+                            System.out.println("[" + timestamp() + "] Client #" + clientId + " requested disconnect");
                             break;
                         }
                         // Evaluate the expression and return the result.
                         String result = evaluate(input);
                         dos.writeUTF(result);
-                        System.out.println("[" + timestamp() + "] Request from " + socket.getInetAddress() + ": " + input + " -> " + result);
+                        System.out.println("[" + timestamp() + "] Client #" + clientId + " request: " + input + " -> " + result);
                     }
                 } catch (IOException ex) {
-                    System.out.println("[" + timestamp() + "] Client disconnected/error: " + ex.getMessage());
+                    System.out.println("[" + timestamp() + "] Client #" + clientId + " disconnected/error: " + ex.getMessage());
                 }
             }
         } catch (IOException ex) {

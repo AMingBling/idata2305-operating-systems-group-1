@@ -21,6 +21,7 @@ public class Client {
 		String host = DEFAULT_HOST;
 		int port = DEFAULT_PORT;
 		String autoRequest = null;
+		boolean autoQuit = false;
 
 		// Allow optional host/port overrides.
 		if (args.length > 0) {
@@ -34,7 +35,17 @@ public class Client {
 			}
 		}
 		if (args.length > 2) {
-			autoRequest = String.join(" ", java.util.Arrays.copyOfRange(args, 2, args.length));
+			java.util.List<String> argList = new java.util.ArrayList<>();
+			for (int i = 2; i < args.length; i++) {
+				if (args[i].equals("--quit")) {
+					autoQuit = true;
+				} else {
+					argList.add(args[i]);
+				}
+			}
+			if (!argList.isEmpty()) {
+				autoRequest = String.join(" ", argList);
+			}
 		}
 
 		// Connect to the server and set up I/O streams.
@@ -49,6 +60,10 @@ public class Client {
 				dos.writeUTF(autoRequest);
 				String response = readServerResponse(dis);
 				System.out.println("Answer = " + response);
+				if (autoQuit) {
+					dos.writeUTF("Quit");
+					return;
+				}
 			}
 
 			try (Scanner scanner = new Scanner(System.in)) {
