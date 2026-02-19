@@ -14,6 +14,7 @@ $startTime = Get-Date
 for ($i = 1; $i -le 10; $i++) {
     Write-Host "Client $i connecting..."
     "3 + 7`nQuit" | & $java Client 127.0.0.1 5000
+    # "3 + 7" | & $java Client 127.0.0.1 5000
 }
 
 # End timing
