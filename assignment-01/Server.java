@@ -11,7 +11,7 @@ import java.time.format.DateTimeFormatter;
  */
 public class Server {
     private static final int PORT = 5000;
-    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 
     /**
      * Accepts one client and handles requests until the client quits.

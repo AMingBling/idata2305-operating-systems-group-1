@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ServerMulti {
     private static final int PORT = 5000;
     private static final AtomicInteger NEXT_CLIENT_ID = new AtomicInteger(1);
-    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 
     /**
      * Accepts clients and dispatches each connection to a worker thread.
