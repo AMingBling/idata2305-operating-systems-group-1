@@ -3,12 +3,15 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  * Single-threaded calculator server using blocking sockets.
  */
 public class Server {
     private static final int PORT = 5000;
+    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     /**
      * Accepts one client and handles requests until the client quits.
@@ -18,23 +21,31 @@ public class Server {
     public static void main(String[] args) {
         System.out.println("Server starting on port " + PORT);
 
-        // Accept a single client and handle requests on this thread.
-        try (ServerSocket serverSocket = new ServerSocket(PORT);
-                Socket socket = serverSocket.accept();
-                DataInputStream dis = new DataInputStream(socket.getInputStream());
-                DataOutputStream dos = new DataOutputStream(socket.getOutputStream())) {
-
-            System.out.println("Client connected: " + socket.getInetAddress());
+        // Accept one client at a time, and keep the server alive for the next client.
+        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             while (true) {
-                String input = dis.readUTF();
-                if (input == null) {
-                    break;
+                try (Socket socket = serverSocket.accept();
+                        DataInputStream dis = new DataInputStream(socket.getInputStream());
+                        DataOutputStream dos = new DataOutputStream(socket.getOutputStream())) {
+
+                    System.out.println("[" + timestamp() + "] Client connected: " + socket.getInetAddress());
+                    while (true) {
+                        String input = dis.readUTF();
+                        if (input == null) {
+                            break;
+                        }
+                        if (input.equalsIgnoreCase("Quit")) {
+                            System.out.println("[" + timestamp() + "] Client requested disconnect: " + socket.getInetAddress());
+                            break;
+                        }
+                        // Evaluate the expression and return the result.
+                        String result = evaluate(input);
+                        dos.writeUTF(result);
+                        System.out.println("[" + timestamp() + "] Request from " + socket.getInetAddress() + ": " + input + " -> " + result);
+                    }
+                } catch (IOException ex) {
+                    System.out.println("[" + timestamp() + "] Client disconnected/error: " + ex.getMessage());
                 }
-                if (input.equalsIgnoreCase("Quit")) {
-                    break;
-                }
-                // Evaluate the expression and return the result.
-                dos.writeUTF(evaluate(input));
             }
         } catch (IOException ex) {
             System.out.println("Server error: " + ex.getMessage());
@@ -78,5 +89,9 @@ public class Server {
             default:
                 return "Error: unsupported operator";
         }
+    }
+
+    private static String timestamp() {
+        return LocalDateTime.now().format(TIME_FORMAT);
     }
 }

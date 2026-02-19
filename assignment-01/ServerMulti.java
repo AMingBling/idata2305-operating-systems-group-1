@@ -3,12 +3,17 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Multi-threaded calculator server using a thread per connection.
  */
 public class ServerMulti {
     private static final int PORT = 5000;
+    private static final AtomicInteger NEXT_CLIENT_ID = new AtomicInteger(1);
+    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     /**
      * Accepts clients and dispatches each connection to a worker thread.
@@ -22,7 +27,8 @@ public class ServerMulti {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             while (true) {
                 Socket socket = serverSocket.accept();
-                Thread worker = new Thread(() -> handleClient(socket));
+                int clientId = NEXT_CLIENT_ID.getAndIncrement();
+                Thread worker = new Thread(() -> handleClient(socket, clientId));
                 worker.start();
             }
         } catch (IOException ex) {
@@ -35,25 +41,29 @@ public class ServerMulti {
      *
      * @param socket connected client socket
      */
-    private static void handleClient(Socket socket) {
+    private static void handleClient(Socket socket, int clientId) {
         try (Socket client = socket;
              DataInputStream dis = new DataInputStream(client.getInputStream());
              DataOutputStream dos = new DataOutputStream(client.getOutputStream())) {
 
-            System.out.println("Client connected: " + client.getInetAddress());
+            System.out.println("[" + timestamp() + "] Client #" + clientId + " connected: " + client.getInetAddress());
             while (true) {
                 String input = dis.readUTF();
                 if (input == null) {
                     break;
                 }
                 if (input.equalsIgnoreCase("Quit")) {
+                    System.out.println("[" + timestamp() + "] Client #" + clientId + " requested disconnect");
                     break;
                 }
                 // Evaluate the expression and return the result.
-                dos.writeUTF(evaluate(input));
+                String result = evaluate(input);
+                dos.writeUTF(result);
+                System.out.println("[" + timestamp() + "] Client #" + clientId + " request: " + input + " -> " + result);
             }
+            System.out.println("[" + timestamp() + "] Client #" + clientId + " disconnected");
         } catch (IOException ex) {
-            System.out.println("Client error: " + ex.getMessage());
+            System.out.println("Client #" + clientId + " error: " + ex.getMessage());
         }
     }
 
@@ -94,5 +104,9 @@ public class ServerMulti {
             default:
                 return "Error: unsupported operator";
         }
+    }
+
+    private static String timestamp() {
+        return LocalDateTime.now().format(TIME_FORMAT);
     }
 }

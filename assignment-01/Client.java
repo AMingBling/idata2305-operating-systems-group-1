@@ -2,6 +2,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.Scanner;
 
 /**
@@ -38,6 +39,7 @@ public class Client {
 			 DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 			 Scanner scanner = new Scanner(System.in)) {
 
+			socket.setSoTimeout(1000);
 			System.out.println("Connected to server at " + host + ":" + port);
 			while (true) {
 				System.out.println("Enter: <number> <op> <number> (or Quit to quit)");
@@ -50,7 +52,19 @@ public class Client {
 				}
 
 				// Read the server response and display it.
-				String response = dis.readUTF();
+				String response;
+				boolean waitingPrinted = false;
+				while (true) {
+					try {
+						response = dis.readUTF();
+						break;
+					} catch (SocketTimeoutException ex) {
+						if (!waitingPrinted) {
+							System.out.println("Waiting...");
+							waitingPrinted = true;
+						}
+					}
+				}
 				System.out.println("Answer = " + response);
 			}
 		} catch (IOException ex) {
